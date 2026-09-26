@@ -1,0 +1,8 @@
+{
+    "n_repetitions": 2,
+    "n_simulations": 2,
+    "n_training_games": 2,
+    "n_evaluation_games": 2,
+    "b_detailed_train": true,
+    "b_detailed_evaluate": true
+}
