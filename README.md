@@ -21,14 +21,12 @@ Differences from that repo:
 
 ## Main menu
 
- Main Menu:
- ----------
  1. Set parameters
  2. Alphazero method
  3. Human test
 
-TTT_AZ - PARAMETERS
--------------------
+## TTT_AZ - PARAMETERS
+
  1. n_repetitions       =      2 (generate-train-evaluate cycles)
  2. n_simulations       =      2 (MCTS simulations per move; 0 = disabled)
  3. n_training_games    =      2 (self-play games per training set; >= 1)
