@@ -254,12 +254,13 @@ def set_parameters():
   save_settings()   # ← persist immediately after every change
   print(f"  ✓  {name} updated: {current_val} → {new_val}")
  return
-def mcts(board, player, neural_net, n_mcts=100, c_puct=1.0):
+def mcts(board,player,neural_net,c_puct=1.0):
  """
  Monte Carlo Tree Search — AlphaZero-style.
  During expansion, the scalar prior probability for each move is now stored
  directly on the corresponding child node (child.P = float(policy_masked[move])).
  """
+ global n_simulations
  # --- Fix: wrap raw list in Board so .is_terminal() etc. are available ---
  if isinstance(board, list):
   board = Board(board)
@@ -337,7 +338,7 @@ def mcts(board, player, neural_net, n_mcts=100, c_puct=1.0):
    n.W += value
    n.Q  = n.W / n.N
    value = -value   # flip perspective at each level
- # Run n_mcts simulations
+ # Run n_simulations simulations
  root_key = (tuple(board._), player)
  if root_key not in tree:
   tree[root_key] = Node(board, player)
@@ -371,7 +372,7 @@ def mcts(board, player, neural_net, n_mcts=100, c_puct=1.0):
  for i, move in enumerate(legal_moves):
   root.children[move].P = (1 - epsilon) * root.children[move].P + epsilon * dirichlet_noise[i]
  # Run mcts simulations
- for _ in range(n_mcts):
+ for _ in range(n_simulations):
   run_simulation(board, player)
  # Build output policy from visit counts
  root         = tree[root_key]
@@ -444,12 +445,13 @@ def initialize_neural_network_and_training_dataset():
  else:
   print(f"[create_neural_network] No existing dataset to delete.")
  return model
-def cumulate_training_set(neural_net, n_mcts=100):
+def cumulate_training_set(neural_net):
  """
  Play one self-play game using MCTS and the given neural network.
  Returns a list of (state, policy, value) tuples for training.
  """
- global n_repetitions,n_simulations,n_training_games,n_evaluation_games
+ global n_repetitions,n_simulations,n_training_games,n_evaluation_games, \
+        n_simulations
  game_history=[]
  board=Board()
  player=1
@@ -457,7 +459,7 @@ def cumulate_training_set(neural_net, n_mcts=100):
  while not board.is_terminal():
   # Canonicalize board for current player
   canonical_board=[x * player for x in board._]
-  policy,move=mcts(canonical_board,player,neural_net=neural_net,n_mcts=n_mcts)
+  policy,move=mcts(canonical_board,player,neural_net=neural_net)
   # Store state and policy; value will be assigned after game ends
   game_history.append((canonical_board[:],policy.copy(),player))
   board=board.apply_move(move,player)
@@ -617,14 +619,13 @@ def play_human_vs_nn(model):
  """
  Play one game between a human and the neural network.
  model      : trained Keras model (already loaded)
- n_mcts     : number of MCTS simulations per AI move
  """
  human_side=-1
  board  = Board()
  player = 1  # X always moves first
  print("\n" + "=" * 40)
  print(f"  You are {'X' if human_side == 1 else 'O'}  "
-          f"({'first' if human_side == 1 else 'second'} player)")
+       f"({'first' if human_side == 1 else 'second'} player)")
  print("=" * 40)
  board.print_state()
  while not board.is_terminal():
@@ -685,7 +686,7 @@ def alphazero_method():
 def main_menu():
  menu_labels={
   1:"Set parameters",
-  2:"Alphazero method",
+  2:"AlphaZero method",
   3:"Human test",
  }
  menu_actions={
