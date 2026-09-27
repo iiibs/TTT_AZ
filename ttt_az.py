@@ -89,11 +89,9 @@ class Board:
    print("  +---+---+---+")
   print()
   return
-
  def is_terminal(self):
   ### True if game is won or the board is full.
   return self.check_winner() != 0 or len(self.get_available_moves()) == 0
-
  def apply_move(self,move,player):
   """
   Apply a move to the board and return the new board state.
@@ -122,137 +120,88 @@ class Board:
 
 ######################################################################x
 
-DEFAULT_SETTINGS = {
- "n_repetitions":      20,
- "n_simulations":      20,
- "n_training_games":   20,
- "n_evaluation_games": 20,
- "b_detailed_train":False,
- "b_detailed_evaluate":False,
+SETTINGS={
+ "n_simulations":         10, # Number os simulations in a game when creating a trining set - can be zero #
+ "n_training_games":      10, # Number of games when creating a training set - must be at least 1 #
+ "n_evaluation_games":    10, # Number of games during evaluation of a neural network against random #
+ "b_detailed_train":   False, # Print details during training
+ "b_detailed_evaluate":False, # Print details during evaluation
 }
-
-# Number of repeated generate-train-evaluate cycles #
-n_repetitions=20
-# Number os simulations in a game when creating a trining set - can be zero #
-n_simulations=20
-# Number of games when creating a training set - must be at least 1 #
-n_training_games=20
-# Number of games during evaluation of a neural network against random #
-n_evaluation_games=20
-b_detailed_train=False
-b_detailed_evaluate=False
-
 DATASET_FILE = 'position_tic_tac_toe_selfplay.pickle'
 MODEL_FILE = 'convolutional_net_alphazero.keras'
 SETTINGS_FILE='settings.json'
 
-def save_settings(settings=None):
- """Write the current parameter values to disk as JSON."""
- if settings is None:
-  settings = {
-   "n_repetitions":n_repetitions,
-   "n_simulations":n_simulations,
-   "n_training_games":n_training_games,
-   "n_evaluation_games":n_evaluation_games,
-   "b_detailed_train":b_detailed_train,
-   "b_detailed_evaluate":b_detailed_evaluate,
-  }
+def save_settings():
+ """Write the current parameter values and other settings to disk as JSON."""
  try:
   with open(SETTINGS_FILE, "w") as f:
-   json.dump(settings, f, indent=4)
+   json.dump(SETTINGS, f, indent=4)
  except OSError as e:
   print(f"  ✗  Failed to save settings: {e}")
  return
 def load_settings():
  """
- Load settings from disk at startup.
+ Load parameter values and other settings from disk at startup.
  If the file doesn't exist (or is corrupt), create it with defaults.
  """
- global n_repetitions,n_simulations,n_training_games,n_evaluation_games, \
-        b_detailed_train,b_detailed_evaluate
-
+ global SETTINGS
  if os.path.exists(SETTINGS_FILE):
   try:
    with open(SETTINGS_FILE, "r") as f:
-    settings = json.load(f)
+    SETTINGS=json.load(f)
   except (json.JSONDecodeError, OSError):
    print(f"  ⚠  Could not read '{SETTINGS_FILE}' — resetting to defaults.")
-   settings = dict(DEFAULT_SETTINGS)
  else:
-  settings = dict(DEFAULT_SETTINGS)
-  save_settings(settings)
+  save_settings()
   print(f"  ℹ  No settings file found — created '{SETTINGS_FILE}' with defaults.")
- # Apply values to the globals, falling back to defaults for missing keys
- n_repetitions=settings.get("n_repetitions",DEFAULT_SETTINGS["n_repetitions"])
- n_simulations=settings.get("n_simulations",DEFAULT_SETTINGS["n_simulations"])
- n_training_games=settings.get("n_training_games",DEFAULT_SETTINGS["n_training_games"])
- n_evaluation_games=settings.get("n_evaluation_games",DEFAULT_SETTINGS["n_evaluation_games"])
- b_detailed_train=settings.get("b_detailed_train", DEFAULT_SETTINGS["b_detailed_train"])
- b_detailed_evaluate=settings.get("b_detailed_evaluate", DEFAULT_SETTINGS["b_detailed_evaluate"])
  return
 def set_parameters():
  """
- Interactive menu to view and change the four global training parameters
+ Interactive menu to view and change the four global training parameters and some settings
  without editing the source code.
  Changes take effect immediately and persist for the entire session.
  Restart the program to reset values to the defaults above.
  """
- global n_repetitions,n_simulations,n_training_games,n_evaluation_games, \
-        b_detailed_train,b_detailed_evaluate
- # Map menu key → (variable name, minimum allowed value, description)
- param_map = {
-  "1": ("n_repetitions",1,"Generate-train-evaluate cycles   (>= 1)"),
-  "2": ("n_simulations",0,"MCTS simulations per move        (>= 0; 0 = disabled)"),
-  "3": ("n_training_games",1,"Self-play games per training set (>= 1)"),
-  "4": ("n_evaluation_games",1,"Evaluation games vs random       (>= 1)"),
-  "5": ("b_detailed_train",False,"Detailed logging of training"),
-  "6": ("b_detailed_evaluate",False,"Detailed logging of evaluation"),
- }
+ # variable name, minimum allowed value, maximum allowed value, description
+ descriptions=[
+  ("n_simulations",      0,10000,"MCTS simulations per move                   (0: disabled, >=1)"),
+  ("n_training_games",   1,10000,"Self-play games for making the training set (>= 1)"),
+  ("n_evaluation_games", 1,10000,"Evaluation games vs random                  (>= 1)"),
+  ("b_detailed_train",   0,    1,"Detailed logging of training                (0: false / 1: true)"),
+  ("b_detailed_evaluate",0,    1,"Detailed logging of evaluation              (0: false / 1: true)"),
+ ]
  while True:
   # ── Display current values ──────────────────────────────────────────
-  print("\n╔════════════════════════════════════════════╗")
-  print(  "║            TTT_AZ — PARAMETERS             ║")
-  print(  "╚════════════════════════════════════════════╝")
-  print(f"  1. n_repetitions       = {n_repetitions:>6} (generate-train-evaluate cycles)")
-  print(f"  2. n_simulations       = {n_simulations:>6} (MCTS simulations per move; 0 = disabled)")
-  print(f"  3. n_training_games    = {n_training_games:>6} (self-play games per training set; >= 1)")
-  print(f"  4. n_evaluation_games  = {n_evaluation_games:>6} (evaluation games vs random player)")
-  print(f"  5. b_detailed_train    = {b_detailed_train:>6} (print details of training)")
-  print(f"  6. b_detailed_evaluate = {b_detailed_evaluate:>6} (print details of evaluation)")
+  print("\n╔══════════════════════════════════════════╗")
+  print(  "║            TTT_AZ — SETTINGS             ║")
+  print(  "╚══════════════════════════════════════════╝")
+  for i,(key,min_val,max_val,description) in enumerate(descriptions,1):
+   print(f" {i}. {key:<20}={SETTINGS[key]!s:>6} // {description}")
   print()
   choice = input("Enter parameter number to change, or 0 to return: ").strip()
   if choice == "0":
    print("  Settings saved for this session and to disk.")
    break
-  if choice not in param_map:
-   print(f"  ✗  '{choice}' is not a valid option — please enter 1, 2, 3, 4, or 0.")
-   continue
-  name, min_val, description = param_map[choice]
-  current_val = globals()[name]
-  if name.startswith("b_"):  # boolean parameter
-   raw = input(f"  {description}\n"
-               f"  Current value: {current_val}  →  New value (y/n): ").strip().lower()
-   if raw in ("y", "yes", "true", "1"):
-    new_val = True
-   elif raw in ("n", "no", "false", "0"):
-    new_val = False
-   else:
-    print(f"  ✗  '{raw}' is not a valid boolean. No change made.")
+  try:
+   idx=int(choice)-1
+   if idx not in range(0,len(descriptions)):
+    print(f"  ✗  '{idx}' is not a valid option — please enter number from 1 to {len(descriptions)} or 0.")
     continue
-  else:
-   raw = input(f"  {description}\n"
-               f"  Current value: {current_val}  →  New value: ").strip()
-   try:
-    new_val = int(raw)
-   except ValueError:
-    print(f"  ✗  '{raw}' is not a valid integer. No change made.")
+   name,min_val,max_val,description=descriptions[idx]
+   old_val=SETTINGS[name]
+   new_val=input(f"Enter new value for {name} (min: {min_val}, max: {max_val}, current: {SETTINGS[name]}): ").strip()
+   if new_val == "":
     continue
-   if new_val < min_val:
-    print(f"  ✗  Value must be >= {min_val}. No change made.")
+   val = int(new_val)
+   if not (min_val <= val <= max_val):
+    print(f"    ✗ Value must be between {min_val} and {max_val}.")
     continue
-  globals()[name] = new_val
+   SETTINGS[name] = val
+   print(f"    ✓ {name} set to {val}")
+  except ValueError:
+   print("    ✗ Please enter a valid integer.")
   save_settings()   # ← persist immediately after every change
-  print(f"  ✓  {name} updated: {current_val} → {new_val}")
+  print(f"  ✓  {name} updated: {old_val} → {new_val}")
  return
 def mcts(board,player,neural_net,c_puct=1.0):
  """
@@ -260,7 +209,6 @@ def mcts(board,player,neural_net,c_puct=1.0):
  During expansion, the scalar prior probability for each move is now stored
  directly on the corresponding child node (child.P = float(policy_masked[move])).
  """
- global n_simulations
  # --- Fix: wrap raw list in Board so .is_terminal() etc. are available ---
  if isinstance(board, list):
   board = Board(board)
@@ -372,7 +320,7 @@ def mcts(board,player,neural_net,c_puct=1.0):
  for i, move in enumerate(legal_moves):
   root.children[move].P = (1 - epsilon) * root.children[move].P + epsilon * dirichlet_noise[i]
  # Run mcts simulations
- for _ in range(n_simulations):
+ for _ in range(SETTINGS["n_simulations"]):
   run_simulation(board, player)
  # Build output policy from visit counts
  root         = tree[root_key]
@@ -450,8 +398,6 @@ def cumulate_training_set(neural_net):
  Play one self-play game using MCTS and the given neural network.
  Returns a list of (state, policy, value) tuples for training.
  """
- global n_repetitions,n_simulations,n_training_games,n_evaluation_games, \
-        n_simulations
  game_history=[]
  board=Board()
  player=1
@@ -505,8 +451,7 @@ def train_supervised(game_spec,
  Returns:
   episode_number, train_error, train_accuracy, new_test_error, test_accuracy
  """
- global b_detailed_train
- detailed=b_detailed_train
+ detailed=SETTINGS["b_detailed_train"]
  # 1. Load existing model or create fresh as last resort
  if os.path.isfile(network_file_path):
   print(f"Loading model from '{network_file_path}'...")
@@ -659,7 +604,6 @@ def human_test():
  play_human_vs_nn(model)
  return
 def alphazero_method():
- global n_repetitions,n_simulations,n_training_games,n_evaluation_games
  # Load model ONCE
  model=tf.keras.models.load_model(MODEL_FILE)
  # Load or initialize dataset
@@ -671,7 +615,7 @@ def alphazero_method():
   training_data=[]
   print("No existing dataset found. Starting fresh.")
  # Self-play: accumulate new data
- for _ in range(n_training_games):
+ for _ in range(SETTINGS["n_training_games"]):
   game_history=cumulate_training_set(neural_net=model)
   training_data.extend(game_history)
  # Save updated dataset

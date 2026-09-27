@@ -27,9 +27,18 @@ Differences from that repo:
 
 ## TTT_AZ - PARAMETERS
 
- 1. n_repetitions       =      2 (generate-train-evaluate cycles)
- 2. n_simulations       =      2 (MCTS simulations per move; 0 = disabled)
+ 1. n_simulations       =      2 (MCTS simulations per move; 0 = disabled)
+ 2. n_repetitions       =      2 (generate-train-evaluate cycles)
  3. n_training_games    =      2 (self-play games per training set; >= 1)
  4. n_evaluation_games  =      2 (evaluation games vs random player)
  5. b_detailed_train    =      1 (print details of training)
  6. b_detailed_evaluate =      1 (print details of evaluation)
+
+## RESULTS
+
+Setting the n_simulations parameter to at least 10, and using it both for training and playing,
+the neural network is able to reach perfect play.
+With this parameter set to 0, the neural network is not able to play well, even if the parameters
+n_repetitions, n_training_games, n_evaluation_games are set to 1000.
+To be able to train a neural network for perfect tic-tac-toe play without simulations, just
+relying on the neural network weights and biases, we need a different method.
