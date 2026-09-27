@@ -38,6 +38,6 @@ Differences from that repo:
 Setting the n_simulations parameter to at least 10, and using it both for training and playing,
 the neural network is able to reach perfect play.
 With this parameter set to 0, the neural network is not able to play well, even if the parameters
-n_repetitions, n_training_games, n_evaluation_games are set to 1000.
+n_training_games and n_evaluation_games are set to 1000.
 To be able to train a neural network for perfect tic-tac-toe play without simulations, just
 relying on the neural network weights and biases, we need a different method.
