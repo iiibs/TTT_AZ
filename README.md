@@ -28,11 +28,10 @@ Differences from that repo:
 ## TTT_AZ - PARAMETERS
 
  1. n_simulations       =      2 (MCTS simulations per move; 0 = disabled)
- 2. n_repetitions       =      2 (generate-train-evaluate cycles)
- 3. n_training_games    =      2 (self-play games per training set; >= 1)
- 4. n_evaluation_games  =      2 (evaluation games vs random player)
- 5. b_detailed_train    =      1 (print details of training)
- 6. b_detailed_evaluate =      1 (print details of evaluation)
+ 2. n_training_games    =      2 (self-play games per training set; >= 1)
+ 3. n_evaluation_games  =      2 (evaluation games vs random player)
+ 4. b_detailed_train    =      1 (print details of training)
+ 5. b_detailed_evaluate =      1 (print details of evaluation)
 
 ## RESULTS
 
